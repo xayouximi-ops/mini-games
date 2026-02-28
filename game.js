@@ -138,9 +138,12 @@ class GameState {
     }
 
     updateDisplay() {
-        document.getElementById('stamina-display').textContent = `💎 体力：${this.resources.stamina}/100`;
-        document.getElementById('gem-display').textContent = `💰 宝石：${this.resources.gem}`;
-        document.getElementById('gold-display').textContent = `🪙 金币：${this.resources.gold}`;
+        const staminaEl = document.getElementById('stamina-display');
+        const gemEl = document.getElementById('gem-display');
+        const goldEl = document.getElementById('gold-display');
+        if (staminaEl) staminaEl.textContent = `💎 体力：${this.resources.stamina}/100`;
+        if (gemEl) gemEl.textContent = `💰 宝石：${this.resources.gem}`;
+        if (goldEl) goldEl.textContent = `🪙 金币：${this.resources.gold}`;
     }
 }
 
@@ -201,6 +204,7 @@ class GachaSystem {
 
     showResult(results) {
         const container = document.getElementById('result-characters');
+        if (!container) return;
         container.innerHTML = '';
 
         results.forEach(char => {
@@ -225,8 +229,8 @@ class GachaSystem {
 class BattleSystem {
     constructor(game) {
         this.game = game;
-        this.canvas = document.getElementById('battle-canvas');
-        this.ctx = this.canvas.getContext('2d');
+        this.canvas = null;
+        this.ctx = null;
         this.isDragging = false;
         this.dragStart = { x: 0, y: 0 };
         this.dragCurrent = { x: 0, y: 0 };
@@ -235,104 +239,171 @@ class BattleSystem {
         this.currentWave = 0;
         this.teamMembers = [];
         this.isBattleRunning = false;
+        this.selectedMember = null;
+    }
 
+    initCanvas() {
+        this.canvas = document.getElementById('battle-canvas');
+        if (!this.canvas) return false;
+        this.ctx = this.canvas.getContext('2d');
         this.setupControls();
+        return true;
     }
 
     setupControls() {
-        this.canvas.addEventListener('mousedown', (e) => this.onDragStart(e));
-        this.canvas.addEventListener('mousemove', (e) => this.onDragMove(e));
-        this.canvas.addEventListener('mouseup', (e) => this.onDragEnd(e));
-        this.canvas.addEventListener('touchstart', (e) => this.onDragStart(e.touches[0]));
-        this.canvas.addEventListener('touchmove', (e) => this.onDragMove(e.touches[0]));
-        this.canvas.addEventListener('touchend', (e) => this.onDragEnd(e));
+        const self = this;
+
+        // 鼠标事件
+        this.canvas.addEventListener('mousedown', function(e) { self.onDragStart(e); });
+        this.canvas.addEventListener('mousemove', function(e) { self.onDragMove(e); });
+        this.canvas.addEventListener('mouseup', function(e) { self.onDragEnd(e); });
+
+        // 触摸事件
+        this.canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            self.onDragStart(e.touches[0]);
+        }, { passive: false });
+        this.canvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            self.onDragMove(e.touches[0]);
+        }, { passive: false });
+        this.canvas.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            self.onDragEnd(e);
+        }, { passive: false });
+    }
+
+    getCanvasCoords(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
+        };
     }
 
     onDragStart(e) {
-        if (!this.isBattleRunning || this.ball) return;
+        console.log('Drag start', this.isBattleRunning, this.ball);
+        if (!this.isBattleRunning || this.ball) {
+            console.log('Cannot drag: battle=', this.isBattleRunning, 'ball=', this.ball);
+            return;
+        }
 
-        const rect = this.canvas.getBoundingClientRect();
-        const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
-        const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+        const coords = this.getCanvasCoords(e);
+        const x = coords.x;
+        const y = coords.y;
+        console.log('Click at:', x, y);
 
         // 检查是否点击到队伍成员
-        const teamIndex = this.teamMembers.findIndex(m =>
-            Math.abs(m.x - x) < 30 && Math.abs(m.y - y) < 30
-        );
+        for (let i = 0; i < this.teamMembers.length; i++) {
+            const member = this.teamMembers[i];
+            const dx = member.x - x;
+            const dy = member.y - y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            console.log('Member', i, 'at', member.x, member.y, 'dist:', dist);
 
-        if (teamIndex >= 0) {
-            this.isDragging = true;
-            this.dragStart = { x, y };
-            this.dragCurrent = { x, y };
-            this.selectedMember = this.teamMembers[teamIndex];
+            if (dist < 40) {  // 增大点击范围
+                this.isDragging = true;
+                this.dragStart = { x: member.x, y: member.y };
+                this.dragCurrent = { x, y };
+                this.selectedMember = member;
+                console.log('Selected member:', member.name);
+                return;
+            }
         }
     }
 
     onDragMove(e) {
         if (!this.isDragging) return;
 
-        const rect = this.canvas.getBoundingClientRect();
-        this.dragCurrent = {
-            x: (e.clientX - rect.left) * (this.canvas.width / rect.width),
-            y: (e.clientY - rect.top) * (this.canvas.height / rect.height)
-        };
+        const coords = this.getCanvasCoords(e);
+        this.dragCurrent = coords;
 
         // 更新力量条
-        const power = Math.min(100, Math.sqrt(
-            Math.pow(this.dragStart.x - this.dragCurrent.x, 2) +
-            Math.pow(this.dragStart.y - this.dragCurrent.y, 2)
-        ) / 2);
-        document.getElementById('power-bar').style.width = power + '%';
+        const dx = this.dragStart.x - this.dragCurrent.x;
+        const dy = this.dragStart.y - this.dragCurrent.y;
+        const power = Math.min(100, Math.sqrt(dx * dx + dy * dy) / 3);
+
+        const powerBar = document.getElementById('power-bar');
+        if (powerBar) {
+            powerBar.style.width = power + '%';
+            // 根据力量改变颜色
+            if (power < 30) {
+                powerBar.style.background = '#27ae60';
+            } else if (power < 70) {
+                powerBar.style.background = '#f39c12';
+            } else {
+                powerBar.style.background = '#e74c3c';
+            }
+        }
     }
 
     onDragEnd(e) {
         if (!this.isDragging) return;
         this.isDragging = false;
 
-        const power = Math.min(100, Math.sqrt(
-            Math.pow(this.dragStart.x - this.dragCurrent.x, 2) +
-            Math.pow(this.dragStart.y - this.dragCurrent.y, 2)
-        ) / 2);
-
-        if (power > 10) {
-            this.launchBall(power);
-        }
-
-        document.getElementById('power-bar').style.width = '0%';
-    }
-
-    launchBall(power) {
         const dx = this.dragStart.x - this.dragCurrent.x;
         const dy = this.dragStart.y - this.dragCurrent.y;
+        const power = Math.min(100, Math.sqrt(dx * dx + dy * dy) / 3);
+
+        console.log('Drag end, power:', power);
+
+        if (power > 15) {
+            this.launchBall(dx, dy, power);
+        }
+
+        const powerBar = document.getElementById('power-bar');
+        if (powerBar) {
+            powerBar.style.width = '0%';
+            powerBar.style.background = 'linear-gradient(90deg, #27ae60, #f39c12, #e74c3c)';
+        }
+    }
+
+    launchBall(dx, dy, power) {
         const angle = Math.atan2(dy, dx);
-        const speed = power * 0.15;
+        const speed = power * 0.25;  // 增加速度
 
         this.ball = {
             x: this.dragStart.x,
             y: this.dragStart.y,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
-            radius: 15,
+            radius: 20,
             character: this.selectedMember,
-            damage: this.selectedMember.atk * (0.5 + power / 200)
+            damage: this.selectedMember.atk * (0.8 + power / 150)
         };
+
+        console.log('Launch! angle:', angle, 'speed:', speed, 'damage:', this.ball.damage);
 
         // 从队伍中暂时移除
         this.teamMembers = this.teamMembers.filter(m => m !== this.selectedMember);
     }
 
     startBattle(stage) {
+        console.log('Starting battle:', stage.name);
         this.currentStage = stage;
         this.currentWave = 0;
-        this.teamMembers = this.game.state.team.map(charId => {
+
+        // 初始化 Canvas
+        if (!this.initCanvas()) {
+            console.error('Failed to init canvas');
+            return;
+        }
+
+        // 设置队伍成员位置
+        this.teamMembers = this.game.state.team.map((charId, index) => {
             const char = this.game.state.characters.find(c => c.uid === charId);
             return {
                 ...char,
-                x: 50 + (this.game.state.team.indexOf(charId) % 4) * 90,
-                y: 450,
-                maxHp: char.hp
+                x: 60 + index * 95,
+                y: 430,
+                maxHp: char.hp,
+                currentHp: char.hp
             };
         });
+
+        console.log('Team members:', this.teamMembers.length);
 
         this.loadWave();
         this.isBattleRunning = true;
@@ -341,20 +412,24 @@ class BattleSystem {
 
     loadWave() {
         const waveData = this.currentStage.enemies[this.currentWave % this.currentStage.enemies.length];
-        const enemyCount = 1 + Math.floor(this.currentWave / 2);
+        const enemyCount = Math.min(3, 1 + Math.floor(this.currentWave / 2));
 
         this.enemies = [];
         for (let i = 0; i < enemyCount; i++) {
             this.enemies.push({
                 ...waveData,
-                x: 100 + i * 150,
-                y: 100 + (this.currentWave % 3) * 80,
-                maxHp: waveData.hp,
+                x: 80 + i * 140,
+                y: 80 + (this.currentWave % 2) * 60,
+                maxHp: waveData.hp * (1 + this.currentWave * 0.1),
+                currentHp: waveData.hp * (1 + this.currentWave * 0.1),
                 id: Date.now() + i
             });
         }
 
-        document.getElementById('battle-wave').textContent = `Wave ${this.currentWave + 1}/${this.currentStage.waves}`;
+        const waveEl = document.getElementById('battle-wave');
+        if (waveEl) {
+            waveEl.textContent = `Wave ${this.currentWave + 1}/${this.currentStage.waves}`;
+        }
     }
 
     gameLoop() {
@@ -373,41 +448,46 @@ class BattleSystem {
 
             // 边界碰撞
             if (this.ball.x < this.ball.radius || this.ball.x > this.canvas.width - this.ball.radius) {
-                this.ball.vx *= -0.8;
+                this.ball.vx *= -0.7;
                 this.ball.x = Math.max(this.ball.radius, Math.min(this.ball.x, this.canvas.width - this.ball.radius));
             }
             if (this.ball.y < this.ball.radius || this.ball.y > this.canvas.height - this.ball.radius) {
-                this.ball.vy *= -0.8;
+                this.ball.vy *= -0.7;
                 this.ball.y = Math.max(this.ball.radius, Math.min(this.ball.y, this.canvas.height - this.ball.radius));
             }
 
             // 摩擦力
-            this.ball.vx *= 0.99;
-            this.ball.vy *= 0.99;
+            this.ball.vx *= 0.985;
+            this.ball.vy *= 0.985;
 
             // 敌人碰撞检测
-            this.enemies.forEach(enemy => {
+            for (let i = 0; i < this.enemies.length; i++) {
+                const enemy = this.enemies[i];
                 const dx = this.ball.x - enemy.x;
                 const dy = this.ball.y - enemy.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
-                if (dist < this.ball.radius + 20) {
+                if (dist < this.ball.radius + 25) {
                     // 造成伤害
-                    enemy.hp -= this.ball.damage;
+                    enemy.currentHp -= this.ball.damage;
                     this.showDamage(enemy.x, enemy.y, Math.floor(this.ball.damage));
+                    console.log('Hit enemy! HP:', enemy.currentHp);
 
                     // 弹珠反弹
                     const angle = Math.atan2(dy, dx);
-                    this.ball.vx = Math.cos(angle) * Math.abs(this.ball.vx) * 0.5;
-                    this.ball.vy = Math.sin(angle) * Math.abs(this.ball.vy) * 0.5;
-                }
-            });
+                    this.ball.vx = Math.cos(angle) * Math.abs(this.ball.vx) * 0.6;
+                    this.ball.vy = Math.sin(angle) * Math.abs(this.ball.vy) * 0.6;
 
-            // 移除死亡敌人
-            this.enemies = this.enemies.filter(e => e.hp > 0);
+                    // 如果敌人死亡
+                    if (enemy.currentHp <= 0) {
+                        this.enemies.splice(i, 1);
+                        i--;
+                    }
+                }
+            }
 
             // 弹珠停止
-            if (Math.abs(this.ball.vx) < 0.1 && Math.abs(this.ball.vy) < 0.1) {
+            if (Math.abs(this.ball.vx) < 0.2 && Math.abs(this.ball.vy) < 0.2) {
                 this.returnBall();
             }
         }
@@ -418,7 +498,7 @@ class BattleSystem {
             if (this.currentWave >= this.currentStage.waves) {
                 this.winBattle();
             } else {
-                this.loadWave();
+                setTimeout(() => this.loadWave(), 500);
             }
         }
 
@@ -432,59 +512,123 @@ class BattleSystem {
         if (this.ball) {
             this.teamMembers.push(this.ball.character);
             this.ball = null;
+            console.log('Ball returned, team size:', this.teamMembers.length);
         }
     }
 
     showDamage(x, y, amount) {
+        const canvas = document.getElementById('battle-canvas');
+        if (!canvas) return;
+
         const damageEl = document.createElement('div');
         damageEl.className = 'damage-number';
         damageEl.textContent = amount;
-        damageEl.style.left = x + 'px';
-        damageEl.style.top = y + 'px';
+        damageEl.style.left = (canvas.offsetLeft + x) + 'px';
+        damageEl.style.top = (canvas.offsetTop + y) + 'px';
         damageEl.style.color = '#ff6b6b';
-        this.canvas.parentElement.appendChild(damageEl);
-        setTimeout(() => damageEl.remove(), 1000);
+        damageEl.style.position = 'absolute';
+        damageEl.style.pointerEvents = 'none';
+        document.body.appendChild(damageEl);
+        setTimeout(() => damageEl.remove(), 800);
     }
 
     render() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // 清空画布
+        this.ctx.fillStyle = '#1a1a2e';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // 绘制网格背景
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        this.ctx.lineWidth = 1;
+        for (let x = 0; x < this.canvas.width; x += 40) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x, this.canvas.height);
+            this.ctx.stroke();
+        }
+        for (let y = 0; y < this.canvas.height; y += 40) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.stroke();
+        }
 
         // 绘制敌人
         this.enemies.forEach(enemy => {
+            // 敌人 sprite
             this.ctx.font = '40px Arial';
             this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
             this.ctx.fillText(enemy.sprite, enemy.x, enemy.y);
 
-            // HP 条
+            // HP 条背景
             this.ctx.fillStyle = '#333';
-            this.ctx.fillRect(enemy.x - 30, enemy.y + 20, 60, 6);
-            this.ctx.fillStyle = '#e74c3c';
-            this.ctx.fillRect(enemy.x - 30, enemy.y + 20, 60 * (enemy.hp / enemy.maxHp), 6);
+            this.ctx.fillRect(enemy.x - 30, enemy.y - 35, 60, 8);
+
+            // HP 条前景
+            const hpPercent = enemy.currentHp / enemy.maxHp;
+            this.ctx.fillStyle = hpPercent > 0.5 ? '#27ae60' : hpPercent > 0.25 ? '#f39c12' : '#e74c3c';
+            this.ctx.fillRect(enemy.x - 30, enemy.y - 35, 60 * hpPercent, 8);
+
+            // HP 文字
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '10px Arial';
+            this.ctx.fillText(Math.floor(enemy.currentHp) + '/' + Math.floor(enemy.maxHp), enemy.x, enemy.y - 45);
         });
 
         // 绘制队伍成员
         this.teamMembers.forEach(member => {
+            // 角色圆圈
             this.ctx.beginPath();
-            this.ctx.arc(member.x, member.y, 20, 0, Math.PI * 2);
-            this.ctx.fillStyle = '#667eea';
+            this.ctx.arc(member.x, member.y, 25, 0, Math.PI * 2);
+
+            // 根据稀有度设置颜色
+            if (member.rarity === 'SSR') {
+                this.ctx.fillStyle = '#ffd700';
+            } else if (member.rarity === 'SR') {
+                this.ctx.fillStyle = '#ba55d3';
+            } else {
+                this.ctx.fillStyle = '#3498db';
+            }
             this.ctx.fill();
             this.ctx.strokeStyle = '#fff';
-            this.ctx.lineWidth = 2;
+            this.ctx.lineWidth = 3;
             this.ctx.stroke();
 
-            this.ctx.font = '12px Arial';
-            this.ctx.fillStyle = '#fff';
+            // 角色名字首字
+            this.ctx.font = 'bold 14px Arial';
+            this.ctx.fillStyle = '#333';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText(member.name.charAt(0), member.x, member.y + 5);
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(member.name.charAt(0), member.x, member.y);
+
+            // HP 条
+            const hpPercent = member.currentHp / member.maxHp;
+            this.ctx.fillStyle = '#333';
+            this.ctx.fillRect(member.x - 20, member.y + 30, 40, 5);
+            this.ctx.fillStyle = '#27ae60';
+            this.ctx.fillRect(member.x - 20, member.y + 30, 40 * hpPercent, 5);
         });
 
         // 绘制拖拽线
-        if (this.isDragging) {
+        if (this.isDragging && this.selectedMember) {
             this.ctx.beginPath();
             this.ctx.moveTo(this.dragStart.x, this.dragStart.y);
             this.ctx.lineTo(this.dragCurrent.x, this.dragCurrent.y);
-            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            this.ctx.lineWidth = 3;
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            this.ctx.lineWidth = 4;
+            this.ctx.setLineDash([10, 5]);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
+
+            // 绘制瞄准方向指示器（相反方向）
+            const aimX = this.dragStart.x * 2 - this.dragCurrent.x;
+            const aimY = this.dragStart.y * 2 - this.dragCurrent.y;
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.dragStart.x, this.dragStart.y);
+            this.ctx.lineTo(aimX, aimY);
+            this.ctx.strokeStyle = 'rgba(255, 100, 100, 0.5)';
+            this.ctx.lineWidth = 2;
             this.ctx.setLineDash([5, 5]);
             this.ctx.stroke();
             this.ctx.setLineDash([]);
@@ -497,8 +641,15 @@ class BattleSystem {
             this.ctx.fillStyle = '#ffd700';
             this.ctx.fill();
             this.ctx.strokeStyle = '#fff';
-            this.ctx.lineWidth = 2;
+            this.ctx.lineWidth = 3;
             this.ctx.stroke();
+
+            // 弹珠上的角色首字
+            this.ctx.font = 'bold 12px Arial';
+            this.ctx.fillStyle = '#333';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(this.ball.character.name.charAt(0), this.ball.x, this.ball.y);
         }
     }
 
@@ -521,24 +672,30 @@ class BattleSystem {
         this.game.state.save();
 
         // 显示结果
-        document.getElementById('battle-result-title').textContent = '战斗胜利!';
-        document.getElementById('battle-rewards').innerHTML = `
-            <div class="reward-item">
-                <span class="reward-icon">🪙</span>
-                <span class="reward-amount">+${rewards.gold}</span>
-            </div>
-            <div class="reward-item">
-                <span class="reward-icon">💰</span>
-                <span class="reward-amount">+${rewards.gem}</span>
-            </div>
-        `;
+        const titleEl = document.getElementById('battle-result-title');
+        const rewardsEl = document.getElementById('battle-rewards');
+        if (titleEl) titleEl.textContent = '战斗胜利!';
+        if (rewardsEl) {
+            rewardsEl.innerHTML = `
+                <div class="reward-item">
+                    <span class="reward-icon">🪙</span>
+                    <span class="reward-amount">+${rewards.gold}</span>
+                </div>
+                <div class="reward-item">
+                    <span class="reward-icon">💰</span>
+                    <span class="reward-amount">+${rewards.gem}</span>
+                </div>
+            `;
+        }
         document.getElementById('battle-result').classList.add('active');
     }
 
     loseBattle() {
         this.isBattleRunning = false;
-        document.getElementById('battle-result-title').textContent = '战斗失败...';
-        document.getElementById('battle-rewards').innerHTML = '';
+        const titleEl = document.getElementById('battle-result-title');
+        const rewardsEl = document.getElementById('battle-rewards');
+        if (titleEl) titleEl.textContent = '战斗失败...';
+        if (rewardsEl) rewardsEl.innerHTML = '';
         document.getElementById('battle-result').classList.add('active');
     }
 }
@@ -557,7 +714,10 @@ class Game {
 
     showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
+        const target = document.getElementById(screenId);
+        if (target) {
+            target.classList.add('active');
+        }
 
         if (screenId === 'story-map') this.renderChapterList();
         if (screenId === 'character-list') this.renderCharacterList();
@@ -566,6 +726,7 @@ class Game {
 
     renderChapterList() {
         const container = document.getElementById('chapter-list');
+        if (!container) return;
         container.innerHTML = '';
 
         STAGE_DATA.forEach(chapter => {
@@ -581,8 +742,11 @@ class Game {
     }
 
     showStageSelect(chapter) {
-        document.getElementById('chapter-title').textContent = chapter.chapterName;
+        const titleEl = document.getElementById('chapter-title');
+        if (titleEl) titleEl.textContent = chapter.chapterName;
+
         const container = document.getElementById('stage-grid');
+        if (!container) return;
         container.innerHTML = '';
 
         chapter.stages.forEach(stage => {
@@ -613,9 +777,14 @@ class Game {
         }
 
         this.state.updateResource('stamina', -stage.stamina);
-        document.getElementById('stage-name').textContent = stage.name;
+        const stageNameEl = document.getElementById('stage-name');
+        if (stageNameEl) stageNameEl.textContent = stage.name;
         this.showScreen('battle');
-        this.battle.startBattle(stage);
+
+        // 延迟启动战斗，确保 Canvas 已显示
+        setTimeout(() => {
+            this.battle.startBattle(stage);
+        }, 100);
     }
 
     retreat() {
@@ -630,6 +799,7 @@ class Game {
 
     renderCharacterList(filter = 'all') {
         const container = document.getElementById('character-grid');
+        if (!container) return;
         container.innerHTML = '';
 
         const filtered = filter === 'all'
@@ -639,10 +809,12 @@ class Game {
         filtered.forEach(char => {
             const div = document.createElement('div');
             div.className = `character-card ${char.rarity}`;
+            const isInTeam = this.state.team.includes(char.uid);
             div.innerHTML = `
                 <span class="character-rarity">${char.rarity}</span>
                 <span class="character-level">Lv.${char.level}</span>
                 <span class="character-name">${char.name}</span>
+                ${isInTeam ? '<span style="position:absolute;top:5px;left:5px;background:#27ae60;padding:2px 6px;border-radius:3px;font-size:10px;">队伍中</span>' : ''}
             `;
             div.onclick = () => this.toggleTeamMember(char);
             container.appendChild(div);
@@ -676,20 +848,26 @@ class Game {
     renderTeam() {
         for (let i = 0; i < 4; i++) {
             const slot = document.getElementById(`team-${i}`);
+            if (!slot) continue;
             const charId = this.state.team[i];
             if (charId) {
                 const char = this.state.characters.find(c => c.uid === charId);
                 slot.className = 'team-member has-character';
                 slot.textContent = char.name.charAt(0);
+                slot.style.background = char.rarity === 'SSR' ? 'linear-gradient(45deg, #ffd700, #ffed4e)' :
+                                        char.rarity === 'SR' ? 'linear-gradient(45deg, #ba55d3, #dda0dd)' :
+                                        'linear-gradient(45deg, #3498db, #5dade2)';
             } else {
                 slot.className = 'team-member';
                 slot.textContent = '+';
+                slot.style.background = 'rgba(255, 255, 255, 0.1)';
             }
         }
     }
 
     renderShop() {
         const container = document.getElementById('shop-items');
+        if (!container) return;
         container.innerHTML = '';
 
         SHOP_ITEMS.forEach(item => {
@@ -725,4 +903,8 @@ class Game {
 
 // ==================== 初始化游戏 ====================
 
-const game = new Game();
+let game;
+window.addEventListener('load', () => {
+    game = new Game();
+    console.log('Game initialized!');
+});
