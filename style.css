@@ -1,0 +1,664 @@
+/* 基础样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Microsoft YaHei', Arial, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+    color: #fff;
+}
+
+/* 屏幕管理 */
+.screen {
+    display: none;
+    padding: 20px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.screen.active {
+    display: block;
+}
+
+/* 主菜单 */
+#main-menu {
+    text-align: center;
+    padding-top: 50px;
+}
+
+.game-title {
+    font-size: 2.5em;
+    background: linear-gradient(45deg, #ffd700, #ff6b6b, #4ecdc4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.subtitle {
+    color: #888;
+    margin-bottom: 40px;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 40px;
+}
+
+.menu-btn {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.story-btn {
+    background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+    color: white;
+}
+
+.event-btn {
+    background: linear-gradient(45deg, #4ecdc4, #44a08d);
+    color: white;
+}
+
+.character-btn {
+    background: linear-gradient(45deg, #a8e6cf, #88d8b0);
+    color: #333;
+}
+
+.gacha-btn {
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    color: #333;
+}
+
+.shop-btn {
+    background: linear-gradient(45deg, #dda0dd, #ba55d3);
+    color: white;
+}
+
+.menu-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* 资源栏 */
+.resource-bar {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-around;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 460px;
+}
+
+.resource {
+    font-size: 1em;
+}
+
+/* 屏幕头部 */
+.screen-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.screen-header h2 {
+    flex: 1;
+    text-align: center;
+    margin-right: 60px;
+}
+
+/* 章节列表 */
+.chapter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.chapter-item {
+    background: linear-gradient(45deg, #2c3e50, #34495e);
+    padding: 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.chapter-item:hover {
+    transform: translateX(10px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.chapter-item h3 {
+    color: #ffd700;
+    margin-bottom: 5px;
+}
+
+.chapter-item p {
+    color: #888;
+    font-size: 0.9em;
+}
+
+/* 关卡网格 */
+.stage-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.stage-item {
+    aspect-ratio: 1;
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.stage-item:hover {
+    transform: scale(1.05);
+}
+
+.stage-item.locked {
+    background: linear-gradient(45deg, #555, #666);
+    cursor: not-allowed;
+}
+
+.stage-item.completed {
+    background: linear-gradient(45deg, #27ae60, #229954);
+}
+
+.stage-number {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.stage-stars {
+    color: #ffd700;
+    margin-top: 5px;
+}
+
+/* 战斗界面 */
+.battle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.battle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.retreat-btn {
+    background: #e74c3c;
+    border: none;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.battle-field {
+    background: #1a1a2e;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+#battle-canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.team-display {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.team-member {
+    aspect-ratio: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    position: relative;
+}
+
+.team-member.has-character {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+}
+
+.team-member .hp-bar {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    right: 5px;
+    height: 4px;
+    background: #333;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.team-member .hp-fill {
+    height: 100%;
+    background: #27ae60;
+    transition: width 0.3s;
+}
+
+.launch-controls {
+    text-align: center;
+}
+
+.power-meter {
+    width: 100%;
+    height: 20px;
+    background: #333;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.power-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #27ae60, #f39c12, #e74c3c);
+    transition: width 0.1s;
+}
+
+.launch-info {
+    color: #888;
+}
+
+/* 召唤界面 */
+.gacha-banner {
+    background: linear-gradient(45deg, #2c3e50, #34495e);
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 20px;
+    border: 2px solid #ffd700;
+}
+
+.banner-title {
+    font-size: 1.5em;
+    color: #ffd700;
+    margin-bottom: 10px;
+}
+
+.banner-rate {
+    color: #888;
+}
+
+.gacha-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.gacha-btn-single, .gacha-btn-multi {
+    padding: 20px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.2em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s;
+}
+
+.gacha-btn-single {
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    color: white;
+}
+
+.gacha-btn-multi {
+    background: linear-gradient(45deg, #9b59b6, #8e44ad);
+    color: white;
+}
+
+.gacha-buttons button:hover {
+    transform: scale(1.02);
+}
+
+.cost {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.bonus {
+    background: #ffd700;
+    color: #333;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.gacha-history {
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+/* 角色列表 */
+.character-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filter-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #444;
+    background: transparent;
+    color: #888;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.filter-btn.active, .filter-btn:hover {
+    border-color: #ffd700;
+    color: #ffd700;
+}
+
+.character-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.character-card {
+    aspect-ratio: 3/4;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.character-card:hover {
+    transform: scale(1.05);
+}
+
+.character-card.SSR {
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    color: #333;
+}
+
+.character-card.SR {
+    background: linear-gradient(45deg, #ba55d3, #dda0dd);
+    color: white;
+}
+
+.character-card.R {
+    background: linear-gradient(45deg, #3498db, #5dade2);
+    color: white;
+}
+
+.character-name {
+    font-size: 0.8em;
+    text-align: center;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.character-rarity {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 0.7em;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 3px 8px;
+    border-radius: 5px;
+}
+
+.character-level {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    font-size: 0.7em;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 3px 8px;
+    border-radius: 5px;
+}
+
+/* 商店 */
+.shop-items {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.shop-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.shop-item-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.shop-item-icon {
+    font-size: 2em;
+}
+
+.shop-item-buy {
+    background: linear-gradient(45deg, #27ae60, #2ecc71);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* 弹窗 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    border: 2px solid #ffd700;
+}
+
+.modal-content h3 {
+    color: #ffd700;
+    margin-bottom: 20px;
+    font-size: 1.5em;
+}
+
+/* 召唤结果 */
+.gacha-result-content {
+    max-width: 500px;
+}
+
+.result-characters {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.result-character {
+    aspect-ratio: 3/4;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    position: relative;
+}
+
+.result-character.SSR {
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    animation: shine 1s infinite;
+}
+
+.result-character.SR {
+    background: linear-gradient(45deg, #ba55d3, #dda0dd);
+}
+
+.result-character.R {
+    background: linear-gradient(45deg, #3498db, #5dade2);
+}
+
+@keyframes shine {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.confirm-btn {
+    background: linear-gradient(45deg, #27ae60, #2ecc71);
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1em;
+}
+
+/* 战斗结果 */
+.rewards {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.reward-item {
+    text-align: center;
+}
+
+.reward-icon {
+    font-size: 2em;
+    display: block;
+}
+
+.reward-amount {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+/* 敌人样式 */
+.enemy {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.enemy-sprite {
+    font-size: 2em;
+}
+
+.enemy-hp-bar {
+    width: 60px;
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.enemy-hp-fill {
+    height: 100%;
+    background: #e74c3c;
+    transition: width 0.3s;
+}
+
+/* 伤害数字 */
+.damage-number {
+    position: absolute;
+    font-weight: bold;
+    font-size: 1.2em;
+    animation: floatUp 1s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes floatUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-50px) scale(1.5);
+    }
+}

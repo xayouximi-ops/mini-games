@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文豪迷犬怪奇潭 - 弹珠 RPG</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 主菜单界面 -->
+    <div id="main-menu" class="screen active">
+        <div class="title-container">
+            <h1 class="game-title">文豪迷犬怪奇潭</h1>
+            <p class="subtitle">Bungo Stray Dogs: Puzzle & Dragons</p>
+        </div>
+        <div class="menu-buttons">
+            <button class="menu-btn story-btn" onclick="game.showScreen('story-map')">主线剧情</button>
+            <button class="menu-btn event-btn" onclick="game.showScreen('event-list')">活动关卡</button>
+            <button class="menu-btn character-btn" onclick="game.showScreen('character-list')">角色</button>
+            <button class="menu-btn gacha-btn" onclick="game.showScreen('gacha')">召唤</button>
+            <button class="menu-btn shop-btn" onclick="game.showScreen('shop')">商店</button>
+        </div>
+        <div class="resource-bar">
+            <span class="resource" id="stamina-display">💎 体力：100/100</span>
+            <span class="resource" id="gem-display">💰 宝石：0</span>
+            <span class="resource" id="gold-display">🪙 金币：0</span>
+        </div>
+    </div>
+
+    <!-- 故事地图界面 -->
+    <div id="story-map" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" onclick="game.showScreen('main-menu')">← 返回</button>
+            <h2>主线剧情</h2>
+        </div>
+        <div class="chapter-list" id="chapter-list">
+            <!-- 章节列表由 JS 生成 -->
+        </div>
+    </div>
+
+    <!-- 关卡选择界面 -->
+    <div id="stage-select" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" onclick="game.showScreen('story-map')">← 返回</button>
+            <h2 id="chapter-title">章节标题</h2>
+        </div>
+        <div class="stage-grid" id="stage-grid">
+            <!-- 关卡列表由 JS 生成 -->
+        </div>
+    </div>
+
+    <!-- 战斗界面 -->
+    <div id="battle" class="screen">
+        <div class="battle-header">
+            <div class="battle-info">
+                <span id="stage-name">关卡名称</span>
+                <span id="battle-wave">Wave 1/5</span>
+            </div>
+            <button class="retreat-btn" onclick="game.retreat()">撤退</button>
+        </div>
+
+        <div class="battle-field">
+            <canvas id="battle-canvas" width="400" height="500"></canvas>
+        </div>
+
+        <div class="team-display">
+            <div class="team-member" id="team-0"></div>
+            <div class="team-member" id="team-1"></div>
+            <div class="team-member" id="team-2"></div>
+            <div class="team-member" id="team-3"></div>
+        </div>
+
+        <div class="launch-controls">
+            <div class="power-meter">
+                <div class="power-bar" id="power-bar"></div>
+            </div>
+            <div class="launch-info">拉拽发射角色!</div>
+        </div>
+    </div>
+
+    <!-- 召唤界面 -->
+    <div id="gacha" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" onclick="game.showScreen('main-menu')">← 返回</button>
+            <h2>角色召唤</h2>
+        </div>
+        <div class="gacha-banner">
+            <div class="banner-title">限时卡池</div>
+            <div class="banner-rate">SSR 3% | SR 15% | R 82%</div>
+        </div>
+        <div class="gacha-buttons">
+            <button class="gacha-btn-single" onclick="gacha.pull(1)">
+                <span>单次召唤</span>
+                <span class="cost">💎 50</span>
+            </button>
+            <button class="gacha-btn-multi" onclick="gacha.pull(10)">
+                <span>十连召唤</span>
+                <span class="cost">💎 500</span>
+                <span class="bonus">保底 SR+</span>
+            </button>
+        </div>
+        <div class="gacha-history" id="gacha-history">
+            <!-- 召唤记录 -->
+        </div>
+    </div>
+
+    <!-- 角色列表界面 -->
+    <div id="character-list" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" onclick="game.showScreen('main-menu')">← 返回</button>
+            <h2>我的角色</h2>
+        </div>
+        <div class="character-filters">
+            <button class="filter-btn active" data-rarity="all">全部</button>
+            <button class="filter-btn" data-rarity="SSR">SSR</button>
+            <button class="filter-btn" data-rarity="SR">SR</button>
+            <button class="filter-btn" data-rarity="R">R</button>
+        </div>
+        <div class="character-grid" id="character-grid">
+            <!-- 角色卡片由 JS 生成 -->
+        </div>
+    </div>
+
+    <!-- 商店界面 -->
+    <div id="shop" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" onclick="game.showScreen('main-menu')">← 返回</button>
+            <h2>商店</h2>
+        </div>
+        <div class="shop-items" id="shop-items">
+            <!-- 商店物品由 JS 生成 -->
+        </div>
+    </div>
+
+    <!-- 召唤结果弹窗 -->
+    <div id="gacha-result" class="modal">
+        <div class="modal-content gacha-result-content">
+            <h3>召唤结果</h3>
+            <div class="result-characters" id="result-characters"></div>
+            <button class="confirm-btn" onclick="gacha.closeResult()">确认</button>
+        </div>
+    </div>
+
+    <!-- 战斗结果弹窗 -->
+    <div id="battle-result" class="modal">
+        <div class="modal-content battle-result-content">
+            <h3 id="battle-result-title">战斗胜利!</h3>
+            <div class="rewards" id="battle-rewards"></div>
+            <button class="confirm-btn" onclick="game.closeBattleResult()">确认</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
