@@ -66,6 +66,94 @@ const STAGE_DATA = [
     }
 ];
 
+// 活动关卡数据
+const EVENT_STAGE_DATA = [
+    {
+        id: 'exp',
+        name: '经验特训',
+        icon: '📚',
+        color: '#3498db',
+        description: '获得大量角色经验书',
+        stages: [
+            { id: 101, name: '初级特训', difficulty: 1, stamina: 10, waves: 3, rewardType: 'exp', rewardValue: 500, enemies: [
+                { name: "训练人偶", hp: 800, atk: 30, sprite: "🤖" }
+            ]},
+            { id: 102, name: '中级特训', difficulty: 3, stamina: 15, waves: 5, rewardType: 'exp', rewardValue: 1500, enemies: [
+                { name: "训练人偶·改", hp: 2000, atk: 80, sprite: "🤖" }
+            ]},
+            { id: 103, name: '上级特训', difficulty: 5, stamina: 20, waves: 7, rewardType: 'exp', rewardValue: 3000, enemies: [
+                { name: "训练人偶·极", hp: 4000, atk: 150, sprite: "🤖" }
+            ]},
+            { id: 104, name: '特级特训', difficulty: 8, stamina: 30, waves: 10, rewardType: 'exp', rewardValue: 8000, enemies: [
+                { name: "训练人偶·神", hp: 8000, atk: 300, sprite: "🤖" }
+            ]},
+        ]
+    },
+    {
+        id: 'gold',
+        name: '金币副本',
+        icon: '💰',
+        color: '#f39c12',
+        description: '获得大量金币',
+        stages: [
+            { id: 201, name: '初级财宝', difficulty: 1, stamina: 10, waves: 3, rewardType: 'gold', rewardValue: 1000, enemies: [
+                { name: "金币史莱姆", hp: 600, atk: 50, sprite: "💛" }
+            ]},
+            { id: 202, name: '中级财宝', difficulty: 3, stamina: 15, waves: 5, rewardType: 'gold', rewardValue: 3000, enemies: [
+                { name: "黄金史莱姆", hp: 1500, atk: 100, sprite: "💛" }
+            ]},
+            { id: 203, name: '上级财宝', difficulty: 5, stamina: 20, waves: 7, rewardType: 'gold', rewardValue: 8000, enemies: [
+                { name: "钻石史莱姆", hp: 3000, atk: 200, sprite: "💎" }
+            ]},
+            { id: 204, name: '传说财宝', difficulty: 8, stamina: 30, waves: 10, rewardType: 'gold', rewardValue: 20000, enemies: [
+                { name: "宝藏巨龙", hp: 10000, atk: 400, sprite: "🐉" }
+            ]},
+        ]
+    },
+    {
+        id: 'limit',
+        name: '界限突破',
+        icon: '⭐',
+        color: '#e74c3c',
+        description: '获得角色突破材料',
+        stages: [
+            { id: 301, name: '暗之试炼', difficulty: 3, stamina: 15, waves: 5, rewardType: 'material', rewardValue: 'dark', enemies: [
+                { name: "暗影守护者", hp: 2500, atk: 120, sprite: "🌑" }
+            ]},
+            { id: 302, name: '光之试炼', difficulty: 3, stamina: 15, waves: 5, rewardType: 'material', rewardValue: 'light', enemies: [
+                { name: "光辉守护者", hp: 2500, atk: 120, sprite: "☀️" }
+            ]},
+            { id: 303, name: '木之试炼', difficulty: 3, stamina: 15, waves: 5, rewardType: 'material', rewardValue: 'wood', enemies: [
+                { name: "自然守护者", hp: 2500, atk: 120, sprite: "🌳" }
+            ]},
+            { id: 304, name: '火之试炼', difficulty: 3, stamina: 15, waves: 5, rewardType: 'material', rewardValue: 'fire', enemies: [
+                { name: "烈焰守护者", hp: 2500, atk: 120, sprite: "🔥" }
+            ]},
+            { id: 305, name: '风之试炼', difficulty: 3, stamina: 15, waves: 5, rewardType: 'material', rewardValue: 'wind', enemies: [
+                { name: "狂风守护者", hp: 2500, atk: 120, sprite: "💨" }
+            ]},
+        ]
+    },
+    {
+        id: 'boss',
+        name: '世界 BOSS',
+        icon: '👹',
+        color: '#9b59b6',
+        description: '挑战强大 BOSS 获得稀有奖励',
+        stages: [
+            { id: 401, name: '祸斗', difficulty: 6, stamina: 20, waves: 1, rewardType: 'special', rewardValue: 500, enemies: [
+                { name: "祸斗", hp: 15000, atk: 200, sprite: "🐕" }
+            ]},
+            { id: 402, name: "百足", difficulty: 7, stamina: 25, waves: 1, rewardType: 'special', rewardValue: 800, enemies: [
+                { name: "百足", hp: 25000, atk: 300, sprite: "🐛" }
+            ]},
+            { id: 403, name: "牙龙", difficulty: 9, stamina: 35, waves: 1, rewardType: 'special', rewardValue: 1500, enemies: [
+                { name: "牙龙", hp: 50000, atk: 500, sprite: "🐲" }
+            ]},
+        ]
+    }
+];
+
 // 商店物品
 const SHOP_ITEMS = [
     { id: 1, name: "体力药水", icon: "🧪", effect: "stamina", value: 50, price: 100, currency: "gold" },
@@ -718,11 +806,35 @@ class BattleSystem {
 
     winBattle() {
         this.isBattleRunning = false;
-        const rewards = {
+
+        // 基础奖励
+        let rewards = {
             gold: 100 * this.currentStage.difficulty,
             gem: Math.floor(10 * this.currentStage.difficulty),
             exp: 50 * this.currentStage.difficulty
         };
+
+        // 活动关卡奖励
+        let eventReward = null;
+        if (this.currentEvent) {
+            const stage = this.currentEvent.stages.find(s => s.id === this.currentStage.id);
+            if (stage) {
+                if (stage.rewardType === 'gold') {
+                    eventReward = { type: 'gold', value: stage.rewardValue, icon: '🪙' };
+                    rewards.gold += stage.rewardValue;
+                } else if (stage.rewardType === 'exp') {
+                    eventReward = { type: 'exp', value: stage.rewardValue, icon: '📚' };
+                    // exp 暂时用 gold 存储
+                    rewards.gold += stage.rewardValue;
+                } else if (stage.rewardType === 'special') {
+                    eventReward = { type: 'gem', value: stage.rewardValue, icon: '💎' };
+                    rewards.gem += stage.rewardValue;
+                } else if (stage.rewardType === 'material') {
+                    eventReward = { type: 'material', value: stage.rewardValue, icon: '⭐' };
+                    rewards.gem += stage.rewardValue * 2; // 突破材料用宝石代替
+                }
+            }
+        }
 
         this.game.state.updateResource('gold', rewards.gold);
         this.game.state.updateResource('gem', rewards.gem);
@@ -739,7 +851,7 @@ class BattleSystem {
         const rewardsEl = document.getElementById('battle-rewards');
         if (titleEl) titleEl.textContent = '战斗胜利!';
         if (rewardsEl) {
-            rewardsEl.innerHTML = `
+            let html = `
                 <div class="reward-item">
                     <span class="reward-icon">🪙</span>
                     <span class="reward-amount">+${rewards.gold}</span>
@@ -749,8 +861,19 @@ class BattleSystem {
                     <span class="reward-amount">+${rewards.gem}</span>
                 </div>
             `;
+            if (eventReward) {
+                html += `
+                    <div class="reward-item" style="border: 2px solid ${this.currentEvent.color}; border-radius: 10px; padding: 10px;">
+                        <span class="reward-icon">${eventReward.icon}</span>
+                        <span class="reward-amount" style="color: ${this.currentEvent.color}">+${eventReward.value}</span>
+                        <div style="font-size: 0.8em; color: #888;">活动奖励</div>
+                    </div>
+                `;
+            }
+            rewardsEl.innerHTML = html;
         }
         document.getElementById('battle-result').classList.add('active');
+        this.currentEvent = null;
     }
 
     loseBattle() {
@@ -770,6 +893,7 @@ class Game {
         this.state = new GameState();
         this.gacha = new GachaSystem(this);
         this.battle = new BattleSystem(this);
+        this.currentEvent = null;
 
         this.state.updateDisplay();
         this.setupFilters();
@@ -802,6 +926,29 @@ class Game {
             div.onclick = () => this.showStageSelect(chapter);
             container.appendChild(div);
         });
+
+        // 渲染活动列表
+        this.renderEventList();
+    }
+
+    renderEventList() {
+        const container = document.getElementById('event-list');
+        if (!container) return;
+        container.innerHTML = '';
+
+        EVENT_STAGE_DATA.forEach(event => {
+            const div = document.createElement('div');
+            div.className = 'event-item';
+            div.style.borderColor = event.color;
+            div.innerHTML = `
+                <div class="event-item-icon">${event.icon}</div>
+                <div class="event-item-name">${event.name}</div>
+                <div class="event-item-desc">${event.description}</div>
+                <div class="event-item-reward">关卡数：${event.stages.length}</div>
+            `;
+            div.onclick = () => this.showEventStageSelect(event);
+            container.appendChild(div);
+        });
     }
 
     showStageSelect(chapter) {
@@ -827,7 +974,59 @@ class Game {
         this.showScreen('stage-select');
     }
 
-    startStage(stage) {
+    showEventStageSelect(event) {
+        const titleEl = document.getElementById('event-title');
+        const infoEl = document.getElementById('event-info');
+        if (titleEl) titleEl.textContent = event.name;
+        if (infoEl) {
+            infoEl.innerHTML = `
+                <div style="font-size: 3em; margin-bottom: 10px;">${event.icon}</div>
+                <div>${event.description}</div>
+                <div class="event-reward-type">奖励：${this.getRewardTypeName(event.stages[0].rewardType)}</div>
+            `;
+        }
+
+        const container = document.getElementById('event-stage-grid');
+        if (!container) return;
+        container.innerHTML = '';
+
+        event.stages.forEach(stage => {
+            const div = document.createElement('div');
+            const saved = this.state.stages[stage.id];
+            div.className = `stage-item ${saved ? 'completed' : ''}`;
+            div.style.borderColor = event.color;
+            const rewardText = this.getRewardText(stage.rewardType, stage.rewardValue);
+            div.innerHTML = `
+                <span class="stage-number">${stage.id}</span>
+                <div class="stage-stars">${saved ? '⭐⭐⭐' : ''}</div>
+                <div style="font-size: 0.7em; margin-top: 5px; color: #ffd700;">${rewardText}</div>
+            `;
+            div.onclick = () => this.startStage(stage, event);
+            container.appendChild(div);
+        });
+
+        this.showScreen('event-stage-select');
+    }
+
+    getRewardTypeName(type) {
+        const names = {
+            'exp': '📚 经验书',
+            'gold': '🪙 金币',
+            'material': '⭐ 突破材料',
+            'special': '🎁 稀有奖励'
+        };
+        return names[type] || type;
+    }
+
+    getRewardText(type, value) {
+        if (type === 'exp') return `EXP +${value}`;
+        if (type === 'gold') return `🪙 +${value}`;
+        if (type === 'material') return `材料 ${value}`;
+        if (type === 'special') return `🎁 ${value}`;
+        return '';
+    }
+
+    startStage(stage, event = null) {
         if (this.state.resources.stamina < stage.stamina) {
             alert('体力不足!');
             return;
@@ -839,6 +1038,7 @@ class Game {
             return;
         }
 
+        this.currentEvent = event;
         this.state.updateResource('stamina', -stage.stamina);
         const stageNameEl = document.getElementById('stage-name');
         if (stageNameEl) stageNameEl.textContent = stage.name;

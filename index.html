@@ -33,8 +33,21 @@
             <button class="back-btn" onclick="game.showScreen('main-menu')">← 返回</button>
             <h2>主线剧情</h2>
         </div>
-        <div class="chapter-list" id="chapter-list">
-            <!-- 章节列表由 JS 生成 -->
+
+        <!-- 主线剧情 -->
+        <div class="mode-section">
+            <h3 class="mode-title">📖 主线剧情</h3>
+            <div class="chapter-list" id="chapter-list">
+                <!-- 章节列表由 JS 生成 -->
+            </div>
+        </div>
+
+        <!-- 活动关卡 -->
+        <div class="mode-section">
+            <h3 class="mode-title">🎪 活动关卡</h3>
+            <div class="event-list" id="event-list">
+                <!-- 活动列表由 JS 生成 -->
+            </div>
         </div>
     </div>
 
@@ -46,6 +59,20 @@
         </div>
         <div class="stage-grid" id="stage-grid">
             <!-- 关卡列表由 JS 生成 -->
+        </div>
+    </div>
+
+    <!-- 活动关卡选择界面 -->
+    <div id="event-stage-select" class="screen">
+        <div class="screen-header">
+            <button class="back-btn" onclick="game.showScreen('story-map')">← 返回</button>
+            <h2 id="event-title">活动名称</h2>
+        </div>
+        <div class="event-info" id="event-info">
+            <!-- 活动信息由 JS 生成 -->
+        </div>
+        <div class="stage-grid" id="event-stage-grid">
+            <!-- 活动关卡列表由 JS 生成 -->
         </div>
     </div>
 
