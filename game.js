@@ -85,13 +85,20 @@ class GameState {
         const saved = localStorage.getItem('bungoSave');
         if (saved) {
             const data = JSON.parse(saved);
-            this.resources = data.resources || { stamina: 100, gem: 1000, gold: 5000 };
+            this.resources = data.resources || { stamina: 100, gem: 10000, gold: 50000 };
             this.characters = data.characters || [];
             this.team = data.team || [];
             this.stages = data.stages || {};
             this.gachaHistory = data.gachaHistory || [];
+            // 老玩家补偿：如果钻石少于 10000，补足到 10000
+            if (this.resources.gem < 10000) {
+                this.resources.gem = 10000;
+            }
+            if (this.resources.gold < 50000) {
+                this.resources.gold = 50000;
+            }
         } else {
-            this.resources = { stamina: 100, gem: 1000, gold: 5000 };
+            this.resources = { stamina: 100, gem: 10000, gold: 50000 };
             this.characters = [];
             this.team = [];
             this.stages = {};
@@ -963,4 +970,14 @@ let game;
 window.addEventListener('load', () => {
     game = new Game();
     console.log('Game initialized!');
+
+    // 调试命令：加钻石
+    window.addGems = function(amount) {
+        if (game && game.state) {
+            const amt = amount || 10000;
+            game.state.updateResource('gem', amt);
+            console.log(`已添加 ${amt} 钻石，当前钻石：${game.state.resources.gem}`);
+        }
+    };
+    console.log('调试命令：addGems(数量) - 例如 addGems(10000) 添加 10000 钻石');
 });
