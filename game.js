@@ -152,11 +152,35 @@ class GameState {
 class GachaSystem {
     constructor(game) {
         this.game = game;
-        this.rates = { SSR: 0.03, SR: 0.15, R: 0.82 };
+        this.currentPool = 'standard';
+        this.pools = {
+            standard: {
+                name: '常驻卡池',
+                rates: { SSR: 0.03, SR: 0.15, R: 0.82 },
+                upCharacters: []
+            },
+            dazai: {
+                name: '太宰治限时 UP 卡池',
+                rates: { SSR: 0.06, SR: 0.20, R: 0.74 },
+                upCharacters: [1], // 太宰治 ID
+                upRate: 0.50 // UP 角色占 SSR 的 50%
+            }
+        };
     }
 
-    pull(times) {
+    switchPool(poolName) {
+        this.currentPool = poolName;
+        document.querySelectorAll('.pool-tab').forEach(tab => tab.classList.remove('active'));
+        event.target.closest('.pool-tab').classList.add('active');
+
+        document.getElementById('gacha-standard').style.display = poolName === 'standard' ? 'block' : 'none';
+        document.getElementById('gacha-dazai').style.display = poolName === 'dazai' ? 'block' : 'none';
+    }
+
+    pull(times, poolType = null) {
+        const pool = poolType ? this.pools[poolType] : this.pools[this.currentPool];
         const cost = times === 1 ? 50 : 500;
+
         if (this.game.state.resources.gem < cost) {
             alert('宝石不足!');
             return;
@@ -165,53 +189,85 @@ class GachaSystem {
         this.game.state.updateResource('gem', -cost);
 
         const results = [];
+        let hasGuaranteedSSR = false;
         let hasGuaranteedSR = false;
 
         for (let i = 0; i < times; i++) {
-            // 十连保底机制
-            if (times === 10 && i === 9 && !hasGuaranteedSR) {
-                const srOrSsr = Math.random() < 0.2 ? 'SSR' : 'SR';
-                const pool = CHARACTER_DATABASE.filter(c => c.rarity === srOrSsr);
-                const char = pool[Math.floor(Math.random() * pool.length)];
-                results.push(char);
-                hasGuaranteedSR = true;
-            } else {
-                const roll = Math.random();
-                let rarity;
-                if (roll < this.rates.SSR) rarity = 'SSR';
-                else if (roll < this.rates.SSR + this.rates.SR) rarity = 'SR';
-                else rarity = 'R';
-
-                const pool = CHARACTER_DATABASE.filter(c => c.rarity === rarity);
-                const char = pool[Math.floor(Math.random() * pool.length)];
-                results.push(char);
-
-                if (rarity === 'SR' || rarity === 'SSR') hasGuaranteedSR = true;
+            // 十连保底机制 - 太宰治卡池保底 SSR 太宰治
+            if (times === 10 && i === 9 && poolType === 'dazai' && !hasGuaranteedSSR) {
+                // 保底获得太宰治
+                results.push(CHARACTER_DATABASE.find(c => c.id === 1));
+                this.game.state.addCharacter(1);
+                hasGuaranteedSSR = true;
+                continue;
             }
 
-            // 添加角色
-            this.game.state.addCharacter(results[results.length - 1].id);
+            // 十连保底机制 - 常驻卡池保底 SR+
+            if (times === 10 && i === 9 && !hasGuaranteedSR && poolType !== 'dazai') {
+                const srOrSsr = Math.random() < 0.2 ? 'SSR' : 'SR';
+                const pool_chars = CHARACTER_DATABASE.filter(c => c.rarity === srOrSsr);
+                const char = pool_chars[Math.floor(Math.random() * pool_chars.length)];
+                results.push(char);
+                this.game.state.addCharacter(char.id);
+                hasGuaranteedSR = true;
+                continue;
+            }
+
+            const roll = Math.random();
+            let rarity;
+            if (roll < pool.rates.SSR) rarity = 'SSR';
+            else if (roll < pool.rates.SSR + pool.rates.SR) rarity = 'SR';
+            else rarity = 'R';
+
+            let char;
+
+            // 如果是 SSR 且在太宰治卡池
+            if (rarity === 'SSR' && poolType === 'dazai') {
+                const upRoll = Math.random();
+                if (upRoll < pool.upRate) {
+                    // 获得 UP 角色 - 太宰治
+                    char = CHARACTER_DATABASE.find(c => c.id === 1);
+                } else {
+                    // 获得其他 SSR
+                    const otherSSR = CHARACTER_DATABASE.filter(c => c.rarity === 'SSR' && c.id !== 1);
+                    char = otherSSR[Math.floor(Math.random() * otherSSR.length)];
+                }
+            } else {
+                const pool_chars = CHARACTER_DATABASE.filter(c => c.rarity === rarity);
+                char = pool_chars[Math.floor(Math.random() * pool_chars.length)];
+            }
+
+            results.push(char);
+            this.game.state.addCharacter(char.id);
+
+            if (rarity === 'SR' || rarity === 'SSR') hasGuaranteedSR = true;
+            if (rarity === 'SSR') hasGuaranteedSSR = true;
         }
 
         // 记录召唤历史
         this.game.state.gachaHistory.unshift({
             date: new Date().toLocaleString(),
+            pool: pool.name,
             results: results.map(r => r.name)
         });
 
-        this.showResult(results);
+        this.showResult(results, poolType);
     }
 
-    showResult(results) {
+    showResult(results, poolType = null) {
         const container = document.getElementById('result-characters');
         if (!container) return;
         container.innerHTML = '';
 
-        results.forEach(char => {
+        results.forEach((char, index) => {
             const div = document.createElement('div');
             div.className = `result-character ${char.rarity}`;
+            if (poolType === 'dazai' && char.id === 1) {
+                div.classList.add('up-character');
+            }
             div.textContent = char.name.charAt(0);
             div.title = `${char.name} (${char.rarity})`;
+            div.style.animationDelay = (index * 0.1) + 's';
             container.appendChild(div);
         });
 

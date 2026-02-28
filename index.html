@@ -84,21 +84,83 @@
             <button class="back-btn" onclick="game.showScreen('main-menu')">← 返回</button>
             <h2>角色召唤</h2>
         </div>
-        <div class="gacha-banner">
-            <div class="banner-title">限时卡池</div>
-            <div class="banner-rate">SSR 3% | SR 15% | R 82%</div>
+
+        <!-- 卡池选择 -->
+        <div class="gacha-pool-selector">
+            <div class="pool-tab active" onclick="gacha.switchPool('standard')">
+                <span>常驻卡池</span>
+            </div>
+            <div class="pool-tab limited" onclick="gacha.switchPool('dazai')">
+                <span>🌟 太宰治限时 UP</span>
+            </div>
         </div>
-        <div class="gacha-buttons">
-            <button class="gacha-btn-single" onclick="game.gacha.pull(1)">
-                <span>单次召唤</span>
-                <span class="cost">💎 50</span>
-            </button>
-            <button class="gacha-btn-multi" onclick="game.gacha.pull(10)">
-                <span>十连召唤</span>
-                <span class="cost">💎 500</span>
-                <span class="bonus">保底 SR+</span>
-            </button>
+
+        <!-- 常驻卡池 -->
+        <div id="gacha-standard" class="gacha-pool-content">
+            <div class="gacha-banner">
+                <div class="banner-title">常驻卡池</div>
+                <div class="banner-rate">SSR 3% | SR 15% | R 82%</div>
+            </div>
+            <div class="gacha-buttons">
+                <button class="gacha-btn-single" onclick="game.gacha.pull(1)">
+                    <span>单次召唤</span>
+                    <span class="cost">💎 50</span>
+                </button>
+                <button class="gacha-btn-multi" onclick="game.gacha.pull(10)">
+                    <span>十连召唤</span>
+                    <span class="cost">💎 500</span>
+                    <span class="bonus">保底 SR+</span>
+                </button>
+            </div>
         </div>
+
+        <!-- 太宰治限时卡池 -->
+        <div id="gacha-dazai" class="gacha-pool-content" style="display: none;">
+            <div class="gacha-banner dazai-banner">
+                <div class="banner-title dazai-title">太宰治 · 限时 UP</div>
+                <div class="banner-subtitle">「人间失格」</div>
+                <div class="banner-rate">SSR 6% (UP 50%) | SR 20% | R 74%</div>
+                <div class="banner-period">活动期间：永久</div>
+            </div>
+            <div class="dazai-showcase">
+                <div class="dazai-card-display">
+                    <div class="dazai-card">
+                        <div class="card-image dazai-img">
+                            <div class="card-placeholder">
+                                <span class="placeholder-text">太宰治卡面</span>
+                                <span class="placeholder-hint">可替换为精美图片</span>
+                            </div>
+                        </div>
+                        <div class="card-info">
+                            <span class="card-name">太宰治</span>
+                            <span class="card-rarity">SSR</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="gacha-buttons">
+                <button class="gacha-btn-single dazai-btn" onclick="game.gacha.pull(1, 'dazai')">
+                    <span>单次召唤</span>
+                    <span class="cost">💎 50</span>
+                </button>
+                <button class="gacha-btn-multi dazai-btn" onclick="game.gacha.pull(10, 'dazai')">
+                    <span>十连召唤</span>
+                    <span class="cost">💎 500</span>
+                    <span class="bonus">保底 SSR 太宰治</span>
+                </button>
+            </div>
+            <div class="dazai-rate-detail">
+                <div class="rate-row">
+                    <span>太宰治 SSR 出现率</span>
+                    <span class="rate-up">UP 50%</span>
+                </div>
+                <div class="rate-row">
+                    <span>十连保底</span>
+                    <span class="rate-guarantee">必得 SSR 太宰治</span>
+                </div>
+            </div>
+        </div>
+
         <div class="gacha-history" id="gacha-history">
             <!-- 召唤记录 -->
         </div>
