@@ -42,10 +42,6 @@
 - Canvas 渲染战斗场景
 - LocalStorage 保存游戏进度
 
-## 在线游玩
-
-访问：https://xayouximi-ops.github.io/mini-games/
-
 ---
 
 🎯 复刻自《文豪迷犬怪奇潭》手游
