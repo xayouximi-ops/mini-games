@@ -933,8 +933,16 @@ class Game {
 
     renderEventList() {
         const container = document.getElementById('event-list');
-        if (!container) return;
+        if (!container) {
+            console.log('event-list container not found');
+            return;
+        }
         container.innerHTML = '';
+
+        if (!EVENT_STAGE_DATA || EVENT_STAGE_DATA.length === 0) {
+            container.innerHTML = '<div style="color: #888; text-align: center;">暂无活动</div>';
+            return;
+        }
 
         EVENT_STAGE_DATA.forEach(event => {
             const div = document.createElement('div');
@@ -949,6 +957,7 @@ class Game {
             div.onclick = () => this.showEventStageSelect(event);
             container.appendChild(div);
         });
+        console.log('Event list rendered:', EVENT_STAGE_DATA.length, 'events');
     }
 
     showStageSelect(chapter) {
